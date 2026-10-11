@@ -180,3 +180,11 @@ def linear_regression_loglog(binned_data):
     l = linregress(x, y)
 
     return l.slope, l.stderr, l.rvalue**2, l.intercept       # beta, błąd beta, R^2, wyraz wolny (do wykresu)
+
+# **** ROZKŁAD WAG KRAWĘDZI ****
+def edge_weights(G, weight='weight'):
+    weights = []
+    for u, v, data in G.edges(data=True):       #data = True zeby zwracal atrybuty
+        weights.append(data[weight])
+
+    return weights
