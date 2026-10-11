@@ -1,6 +1,7 @@
 import networkx as nx
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import linregress
 
 # **** OGÓLNE FUNKCJE ****
 def basic_info(G):
@@ -74,11 +75,10 @@ def degree_list(G):
 def count_degree(degrees):
     degree_count = {}
     for degree in degrees:
-        if degree in degree_count:
-            degree_count[degree] += 1
-        else:
-            degree_count[degree] = 1
-    return degree_count 
+        if degree not in degree_count:
+            degree_count[degree] = 0
+        degree_count[degree] += 1
+    return degree_count
 
 def degree_distribution(G):
     k_in, k_out = degree_list(G)
@@ -115,3 +115,68 @@ def strength_list(G, weight='weight'):
     
     return s_in, s_out
 
+# **** RELACJA STOPIEŃ-SIŁA ****
+
+def degree_strength_pairs(G, weight='weight'):
+    k_in, k_out = degree_list(G)
+    s_in, s_out = strength_list(G, weight=weight)
+
+    pairs_in = []
+    pairs_out = []
+    for i in range(len(G.nodes)):
+        pairs_in.append((k_in[i], s_in[i]))
+        pairs_out.append((k_out[i], s_out[i]))
+
+    pairs_in_filtered = [(k, s) for k, s in pairs_in if k > 0]
+    pairs_out_filtered = [(k, s) for k, s in pairs_out if k > 0]
+
+    return pairs_in_filtered, pairs_out_filtered
+
+def average_strength_per_degree(pairs):
+    degree_strength = {}
+
+    for k, s in pairs:
+        if k not in degree_strength:
+            degree_strength[k] = []
+        degree_strength[k].append(s)
+
+    
+    average = [(k, (sum(s)/len(s))) for k, s in degree_strength.items()]
+    return sorted(average)
+
+def binned_average_strength(pairs, n_bins):
+
+    k_values = np.array([k for k, s in pairs])
+    s_values = np.array([s for k, s in pairs])
+
+    x_min = np.min(k_values)
+    x_max = np.max(k_values)   
+
+    bins = np.logspace(np.log10(x_min), np.log10(x_max+1), n_bins)
+
+    bin_indices = np.digitize(k_values, bins)   # przypisywanie numeru bina do wezla
+
+    x = []
+    y = []
+    for i in range(1, len(bins)):
+        mask = bin_indices == i    # dostajemy tablice t/f gdy wezel w binie i
+        if mask.sum() >=5:          # min 5 wezlow, zeby ogon wykresu byl ladny        
+        # if np.any(mask):          # pomijamy puste biny
+            x.append(np.mean(k_values[mask]))
+            y.append(np.mean(s_values[mask]))
+
+    data = []
+    for i in range(len(x)):
+        data.append((x[i], y[i]))
+
+    # print(mask.sum(), np.mean(k_values[mask]), np.mean(s_values[mask])) # liczenie wezlow w binie bo jakis wykres dziwny
+
+    return data
+
+def linear_regression_loglog(binned_data):
+    x = np.log10([k for k, s in binned_data])
+    y = np.log10([s for k, s in binned_data])
+
+    l = linregress(x, y)
+
+    return l.slope, l.stderr, l.rvalue**2, l.intercept       # beta, błąd beta, R^2, wyraz wolny (do wykresu)
