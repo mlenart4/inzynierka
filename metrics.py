@@ -153,7 +153,7 @@ def binned_average_strength(pairs, n_bins):
     x_max = np.max(k_values)   
 
     bins = np.logspace(np.log10(x_min), np.log10(x_max+1), n_bins)
-
+    bins[0] = x_min
     bin_indices = np.digitize(k_values, bins)   # przypisywanie numeru bina do wezla
 
     x = []
