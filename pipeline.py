@@ -28,25 +28,25 @@ krawedzie = pd.DataFrame({
     "n": df_edges["neg"].astype(int)
 })
 
-print(len(krawedzie))
+# print(len(krawedzie))
 assert krawedzie[["nadawca", "odbiorca"]].notna().all().all()
 
 
 krawedzie["znak"] = np.sign(krawedzie["p"]-krawedzie["n"])
 krawedzie["znak_wiekszosci"] = krawedzie["znak"].map({1: "+", -1: "-"})
 
-print(krawedzie["znak_wiekszosci"].value_counts(dropna=False))
-print(krawedzie.head())
+# print(krawedzie["znak_wiekszosci"].value_counts(dropna=False))
+# print(krawedzie.head())
 
 maska = (krawedzie["p"] == 0) & (krawedzie["n"] == 0)
 liczba_neutralnych =  maska.sum()
 
-print(liczba_neutralnych)
+# print(liczba_neutralnych)
 
 maska_v2 = (krawedzie["p"]-krawedzie["n"] == 0) & ((krawedzie["p"]>0) | (krawedzie["n"]>0))
 liczba_remisow = maska_v2.sum()
 
-print(liczba_remisow)
+# print(liczba_remisow)
 
 krawedzie["a"] = np.maximum(krawedzie["p"], krawedzie["n"])+ 1
 krawedzie["b"] = np.minimum(krawedzie["p"], krawedzie["n"])+ 1
@@ -57,9 +57,23 @@ prog = 0.8
 warunek = krawedzie["beta"] >= prog
 
 krawedzie["etykieta"] = krawedzie["znak_wiekszosci"].where(warunek)
-print(krawedzie["etykieta"].value_counts(dropna=False))
+# print(krawedzie["etykieta"].value_counts(dropna=False))
 
 krawedzie["suma_wzmianek"] = krawedzie["p"] + krawedzie["n"]
 warunek_v2 = ((krawedzie["suma_wzmianek"] >=3) & (krawedzie["p"] != krawedzie["n"]))
 krawedzie["etykieta_min3"] = krawedzie["znak_wiekszosci"].where(warunek_v2)
-print(krawedzie["etykieta_min3"].value_counts(dropna=False))
+# print(krawedzie["etykieta_min3"].value_counts(dropna=False))
+
+# print(table["club"].value_counts())
+
+table["klub"] = table["club"].replace({"Polska2050-TD": "Polska2050"})
+# print(table["klub"].value_counts())
+
+koalicja = {"KO", "PSL-TD", "Polska2050", "Lewica"}
+opozycja = {"PiS", "Konfederacja", "Razem", "Republikanie", "niez.", "Konfederacja_KP"}
+
+czy_koalicja = table["klub"].isin(koalicja)
+
+table["strona"] = np.where(czy_koalicja, "koalicja", "opozycja")
+print(table["strona"].value_counts())
+
