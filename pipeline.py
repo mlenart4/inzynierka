@@ -59,7 +59,7 @@ warunek = krawedzie["beta"] >= prog
 krawedzie["etykieta"] = krawedzie["znak_wiekszosci"].where(warunek)
 print(krawedzie["etykieta"].value_counts(dropna=False))
 
-krawedzie["p+n"] = krawedzie["p"] + krawedzie["n"]
-warunek_v2 = ((krawedzie["p+n"] >=3) & (krawedzie["p"] != krawedzie["n"]))
-krawedzie["p+n>=3"] = krawedzie["znak_wiekszosci"].where(warunek_v2)
-print(krawedzie["p+n>=3"].value_counts(dropna=False))
+krawedzie["suma_wzmianek"] = krawedzie["p"] + krawedzie["n"]
+warunek_v2 = ((krawedzie["suma_wzmianek"] >=3) & (krawedzie["p"] != krawedzie["n"]))
+krawedzie["etykieta_min3"] = krawedzie["znak_wiekszosci"].where(warunek_v2)
+print(krawedzie["etykieta_min3"].value_counts(dropna=False))
