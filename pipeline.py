@@ -4,19 +4,50 @@ import pandas as pd
 import numpy as np
 from scipy.stats import beta
 
+DATA_ODNIESIENIA = pd.Timestamp("2026-10-01")
+
 nodes_ids = sorted(G.nodes, key=int)
 id_x = {n_id: i for i, n_id in enumerate(nodes_ids)}
 # print(id_x['250'])  # test czy dziala przypisywanie numerkow
 
-table = pd.DataFrame({
-    "idx": range(len(nodes_ids)),
-    "node_id": nodes_ids,
-    "name": [G.nodes[n]["firstLastName"] for n in nodes_ids],
-    "club": [G.nodes[n]["club"] for n in nodes_ids]
-})
+# table = pd.DataFrame({
+#     "idx": range(len(nodes_ids)),
+#     "node_id": nodes_ids,
+#     "name": [G.nodes[n]["firstLastName"] for n in nodes_ids],
+#     "club": [G.nodes[n]["club"] for n in nodes_ids],
+#     "accusativeName": [G.nodes[n]["accusativeName"] for n in nodes_ids],
+#     "active": [G.nodes[n]["active"] for n in nodes_ids],
+#     "birthDate": [G.nodes[n]["birthDate"] for n in nodes_ids],
+#     "birthLocation": [G.nodes[n]["birthLocation"] for n in nodes_ids],
+#     "districtName": [G.nodes[n]["districtName"] for n in nodes_ids],
+#     "districtNum": [G.nodes[n]["districtNum"] for n in nodes_ids],
+#     "educationLevel": [G.nodes[n]["educationLevel"] for n in nodes_ids],
+#     "email": [G.nodes[n]["email"] for n in nodes_ids],
+#     "firstName": [G.nodes[n]["firstName"] for n in nodes_ids],
+#     "genitiveName": [G.nodes[n]["genitiveName"] for n in nodes_ids],
+#     "lastFirstName": [G.nodes[n]["lastFirstName"] for n in nodes_ids],
+#     "lastName": [G.nodes[n]["lastName"] for n in nodes_ids],
+#     "numberOfVotes": [G.nodes[n]["numberOfVotes"] for n in nodes_ids],
+#     "profession": [G.nodes[n]["profession"] for n in nodes_ids],
+#     "secondName": [G.nodes[n]["secondName"] for n in nodes_ids],
+#     "voivodeship": [G.nodes[n]["voivodeship"] for n in nodes_ids],
+# })
+table = pd.DataFrame.from_dict(dict(G.nodes(data=True)), orient="index")
+table = table.loc[nodes_ids]               # kolejnosc zgodna z idx
+table.index.name = "node_id"
+table = table.reset_index()
+table.insert(0, "idx", range(len(table)))
+table["name"] = table["firstLastName"]
+table["node_id"].astype(int)
 
+# print(table.columns.tolist())
+
+print(table.isna().sum())
+print(table["active"].value_counts())
+print(table["profession"].nunique(), table["voivodeship"].nunique(), table["educationLevel"].nunique())
 # print(table.head())
 # print(len(table))
+
 
 df_edges = nx.to_pandas_edgelist(G)
 
@@ -29,7 +60,7 @@ krawedzie = pd.DataFrame({
 })
 
 # print(len(krawedzie))
-assert krawedzie[["nadawca", "odbiorca"]].notna().all().all()
+
 
 
 krawedzie["znak"] = np.sign(krawedzie["p"]-krawedzie["n"])
@@ -75,7 +106,7 @@ opozycja = {"PiS", "Konfederacja", "Razem", "Republikanie", "niez.", "Konfederac
 czy_koalicja = table["klub"].isin(koalicja)
 
 table["strona"] = np.where(czy_koalicja, "koalicja", "opozycja")
-print(table["strona"].value_counts())
+# print(table["strona"].value_counts())
 
 klub_wg_idx = table.set_index("idx")["klub"] # numer posła -> klub / strona
 strona_wg_idx = table.set_index("idx")["strona"]
@@ -97,8 +128,26 @@ typ_pary = [wewnatrzklubowa, koalicyjna, opozycyjna, rząd_opozycja]
 typ_pary_wartosc = ["wewnatrzklubowa", "koalicyjna", "opozycja_opozycja", "rząd_opozycja"]
 
 krawedzie["typ_pary"] = np.select(typ_pary, typ_pary_wartosc, default="BRAK")
-print(krawedzie["typ_pary"].head())
+# print(krawedzie["typ_pary"].head())
 
 
-print(krawedzie["typ_pary"].value_counts())
-print(krawedzie.groupby(["typ_pary", "etykieta"]).size())  # typ pary + etykieta
+# print(krawedzie["typ_pary"].value_counts())
+# print(krawedzie.groupby(["typ_pary", "etykieta"]).size())  # typ pary + etykieta
+
+table["birthDate"] = pd.to_datetime(table["birthDate"])
+table["wiek"] = (DATA_ODNIESIENIA - table["birthDate"]).dt.days / 365.25
+print(table["wiek"].describe())
+print(table["wiek"].isna().sum())   # ma byc 0
+
+ 
+table["active_num"] = table["active"].astype(float)   # true false na 1 0 
+
+kolumny_tekst = ["club", "klub", "strona",
+                 "voivodeship", "profession", "educationLevel", "districtName",
+                 "birthLocation", "secondName", "inactiveCause", "waiverDesc",
+                 "firstName", "lastName", "firstLastName", "lastFirstName",
+                 "accusativeName", "genitiveName", "email"]
+table[kolumny_tekst] = table[kolumny_tekst].fillna("brak")
+
+print(table[kolumny_tekst + ["wiek", "numberOfVotes", "districtNum", "active_num"]].isna().sum().sum())  # ma być 0
+
