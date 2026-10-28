@@ -77,3 +77,28 @@ czy_koalicja = table["klub"].isin(koalicja)
 table["strona"] = np.where(czy_koalicja, "koalicja", "opozycja")
 print(table["strona"].value_counts())
 
+klub_wg_idx = table.set_index("idx")["klub"] # numer posła -> klub / strona
+strona_wg_idx = table.set_index("idx")["strona"]
+
+krawedzie["klub_nadawcy"] = krawedzie["nadawca"].map(klub_wg_idx)
+krawedzie["klub_adresata"] = krawedzie["odbiorca"].map(klub_wg_idx)
+krawedzie["strona_nadawcy"] = krawedzie["nadawca"].map(strona_wg_idx)
+krawedzie["strona_adresata"] = krawedzie["odbiorca"].map(strona_wg_idx)
+
+# print(krawedzie[["nadawca", "klub_nadawcy", "strona_nadawcy",
+#                  "odbiorca", "klub_adresata", "strona_adresata"]].head())
+
+wewnatrzklubowa = (krawedzie["klub_nadawcy"] == krawedzie["klub_adresata"]) & (krawedzie["klub_nadawcy"] != "niez.")
+koalicyjna = (krawedzie["strona_nadawcy"] == krawedzie["strona_adresata"]) & (krawedzie["strona_nadawcy"] == "koalicja")
+opozycyjna = (krawedzie["strona_nadawcy"] == krawedzie["strona_adresata"]) & (krawedzie["strona_nadawcy"] == "opozycja")
+rząd_opozycja = (krawedzie["strona_nadawcy"] != krawedzie["strona_adresata"])
+
+typ_pary = [wewnatrzklubowa, koalicyjna, opozycyjna, rząd_opozycja]
+typ_pary_wartosc = ["wewnatrzklubowa", "koalicyjna", "opozycja_opozycja", "rząd_opozycja"]
+
+krawedzie["typ_pary"] = np.select(typ_pary, typ_pary_wartosc, default="BRAK")
+print(krawedzie["typ_pary"].head())
+
+
+print(krawedzie["typ_pary"].value_counts())
+print(krawedzie.groupby(["typ_pary", "etykieta"]).size())  # typ pary + etykieta
