@@ -3,6 +3,8 @@ import networkx as nx
 import pandas as pd
 import numpy as np
 from scipy.stats import beta
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 DATA_ODNIESIENIA = pd.Timestamp("2026-10-01")
 
@@ -151,3 +153,32 @@ table[kolumny_tekst] = table[kolumny_tekst].fillna("brak")
 
 print(table[kolumny_tekst + ["wiek", "numberOfVotes", "districtNum", "active_num"]].isna().sum().sum())  # ma być 0
 
+kolumny_klub = [ "klub", "strona"] # bez club bo to przed scaleniem
+kolumny_kategorie = ["voivodeship", "districtName", "educationLevel"]
+kolumny_tozsamosc = ["firstName", "secondName", "lastName", "firstLastName", "lastFirstName", "accusativeName", "genitiveName", "email", "birthLocation"]   # bez name bo to kopia firstLastName
+kolumny_liczbowe = ["wiek", "numberOfVotes", "districtNum"]
+kolumny_rola = ["waiverDesc", "profession", "inactiveCause" ]
+
+
+preproces = ColumnTransformer([
+    ("klub", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_klub),
+    ("kategorie", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_kategorie),
+    ("tozsamosc", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_tozsamosc),
+    ("rola", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_rola),
+    ("liczbowe",  StandardScaler(), kolumny_liczbowe),
+    ("active",    "passthrough", ["active_num"])
+])
+
+X_pelne = preproces.fit_transform(table).astype("float32")
+nazwy = preproces.get_feature_names_out()
+
+print(X_pelne.shape)
+print(len(nazwy))          # ma być równe X_pelne.shape[1]
+
+bez_klubu_maska = ~np.char.startswith(nazwy.astype(str), "klub__")
+X_bez_klubu = X_pelne[:, bez_klubu_maska]
+
+bez_klubu_i_funkcji_maska = bez_klubu_maska & (~np.char.startswith(nazwy.astype(str), "rola__"))
+X_bez_klubu_funkcji = X_pelne[:, bez_klubu_i_funkcji_maska]
+
+print(X_pelne.shape, X_bez_klubu.shape, X_bez_klubu_funkcji.shape)
