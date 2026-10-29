@@ -44,10 +44,10 @@ table["node_id"].astype(int)
 
 # print(table.columns.tolist())
 
-print(table.isna().sum())
-print(table["active"].value_counts())
-print(table["profession"].nunique(), table["voivodeship"].nunique(), table["educationLevel"].nunique())
-# print(table.head())
+# print(table.isna().sum())
+# print(table["active"].value_counts())
+# print(table["profession"].nunique(), table["voivodeship"].nunique(), table["educationLevel"].nunique())
+
 # print(len(table))
 
 
@@ -138,8 +138,8 @@ krawedzie["typ_pary"] = np.select(typ_pary, typ_pary_wartosc, default="BRAK")
 
 table["birthDate"] = pd.to_datetime(table["birthDate"])
 table["wiek"] = (DATA_ODNIESIENIA - table["birthDate"]).dt.days / 365.25
-print(table["wiek"].describe())
-print(table["wiek"].isna().sum())   # ma byc 0
+# print(table["wiek"].describe())
+# print(table["wiek"].isna().sum())   # ma byc 0
 
  
 table["active_num"] = table["active"].astype(float)   # true false na 1 0 
@@ -151,7 +151,7 @@ kolumny_tekst = ["club", "klub", "strona",
                  "accusativeName", "genitiveName", "email"]
 table[kolumny_tekst] = table[kolumny_tekst].fillna("brak")
 
-print(table[kolumny_tekst + ["wiek", "numberOfVotes", "districtNum", "active_num"]].isna().sum().sum())  # ma być 0
+# print(table[kolumny_tekst + ["wiek", "numberOfVotes", "districtNum", "active_num"]].isna().sum().sum())  # ma być 0
 
 kolumny_klub = [ "klub", "strona"] # bez club bo to przed scaleniem
 kolumny_kategorie = ["voivodeship", "districtName", "educationLevel"]
@@ -172,8 +172,8 @@ preproces = ColumnTransformer([
 X_pelne = preproces.fit_transform(table).astype("float32")
 nazwy = preproces.get_feature_names_out()
 
-print(X_pelne.shape)
-print(len(nazwy))          # ma być równe X_pelne.shape[1]
+# print(X_pelne.shape)
+# print(len(nazwy))          # ma być równe X_pelne.shape[1]
 
 bez_klubu_maska = ~np.char.startswith(nazwy.astype(str), "klub__")
 X_bez_klubu = X_pelne[:, bez_klubu_maska]
@@ -181,4 +181,4 @@ X_bez_klubu = X_pelne[:, bez_klubu_maska]
 bez_klubu_i_funkcji_maska = bez_klubu_maska & (~np.char.startswith(nazwy.astype(str), "rola__"))
 X_bez_klubu_funkcji = X_pelne[:, bez_klubu_i_funkcji_maska]
 
-print(X_pelne.shape, X_bez_klubu.shape, X_bez_klubu_funkcji.shape)
+# print(X_pelne.shape, X_bez_klubu.shape, X_bez_klubu_funkcji.shape)

@@ -37,8 +37,8 @@ def build_graph(krawedzie, X):
     return data
 
 
-# testowe budowanie grafu
-graph = build_graph(krawedzie, X_pelne)
-for et in graph.edge_types:
-    print(et, graph[et].edge_index.shape[1])
-print(graph["posel"].x.shape)
+# # testowe budowanie grafu
+# graph = build_graph(krawedzie, X_pelne)
+# for et in graph.edge_types:
+#     print(et, graph[et].edge_index.shape[1])
+# print(graph["posel"].x.shape)
