@@ -5,7 +5,8 @@ import torch
 from torch_geometric.data import HeteroData
 import torch_geometric.transforms as T
 import numpy as np
-from pipeline import krawedzie, X_pelne
+from pipeline import X_pelne
+from data_split import krawedzie, podzialy_walidacyjne
 
 def build_graph(krawedzie, X):
     data = HeteroData()
