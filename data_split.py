@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message="The least populated class")
+
 from pipeline import krawedzie
 import numpy as np
 import pandas as pd
@@ -32,8 +35,6 @@ for ziarno in ziarna:
     for numer, (trening, test) in enumerate(podzial.split(z_etykieta, y, grupy)):
         grupy_test = set(grupy.iloc[test])
         grupy_trening = set(grupy.iloc[trening])
-        # print(numer, len(trening), len(test), len(grupy_test & grupy_trening))
-        # faldy.append({
         podzialy[(ziarno, numer)] = {
             "trening": z_etykieta.index[trening].to_numpy(),
             "test": z_etykieta.index[test].to_numpy(),}
@@ -42,9 +43,25 @@ for ziarno in ziarna:
     # print([len(f["test"]) for f in faldy])                    # rowne powinny byc 
     # print(sum(len(f["test"]) for f in faldy))                 # 1536
 
-print(len(podzialy))    # 25
-for ziarno in ziarna:
-    testy = np.concatenate([podzialy[(ziarno, nr)]["test"] for nr in range(5)])
-    print(ziarno, len(testy), len(set(testy)))    # 1536 1536
+# print(len(podzialy))    # 25
 
-print(set(podzialy[(21, 0)]["test"]) == set(podzialy[(37, 0)]["test"]))   # ma być False
+
+podzialy_walidacyjne = {}
+
+for (ziarno, nr), p in podzialy.items():
+    treningowa = z_etykieta.loc[p["trening"]]
+
+    podzial_walidacja = StratifiedGroupKFold(n_splits=10, shuffle=True, random_state=ziarno)
+    for trening_pozycja, walid_pozycja in podzial_walidacja.split(treningowa, treningowa["warstwa"], treningowa["grupa"]):
+        break
+
+    podzialy_walidacyjne[(ziarno, nr)] = {
+        "trening": treningowa.index[trening_pozycja].to_numpy(),
+        "walidacja": treningowa.index[walid_pozycja].to_numpy(),
+        "test": p["test"],
+    }
+
+# print([len(p["walidacja"]) for p in podzialy_walidacyjne.values()])
+# print(np.mean([len(p["trening"]) for p in podzialy_walidacyjne.values()]),
+#       np.mean([len(p["walidacja"]) for p in podzialy_walidacyjne.values()]),
+#       np.mean([len(p["test"]) for p in podzialy_walidacyjne.values()]))
