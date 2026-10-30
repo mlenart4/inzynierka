@@ -29,7 +29,7 @@ if __name__ == "__main__":
         graf = build_graph(widoczne, X_pelne)
         czy_wycieka(graf, krawedzie, p)
 
-    print("nie wycieka")
+    print("{len(podzialy_walidacyjne)} podziałów bez wycieku")
 
 
     # a tu powinien powiedziec ze przecieka

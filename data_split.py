@@ -11,14 +11,7 @@ mniejszy = np.minimum(krawedzie["nadawca"], krawedzie["odbiorca"])
 wiekszy = np.maximum(krawedzie["nadawca"], krawedzie["odbiorca"])
 
 krawedzie["grupa"] = krawedzie.groupby([mniejszy, wiekszy]).ngroup()
-
-# print(krawedzie["grupa"].nunique())               # mniej niż 10 373
-# print(krawedzie["grupa"].value_counts().max())    # ma być 2
-
-
 krawedzie["warstwa"] = krawedzie["typ_pary"] + "_" + krawedzie["etykieta"]
-# print(krawedzie["warstwa"].value_counts())
-# print(krawedzie["warstwa"].notna().sum())   # 1536
 
 z_etykieta_maska = krawedzie["etykieta"].notna()
 z_etykieta = krawedzie[z_etykieta_maska]
@@ -39,9 +32,6 @@ if PLIK.exists():
                 czesc: dane[f"z{ziarno}_f{nr}_{czesc}"]
                 for czesc in ["trening", "walidacja", "test"]
             }
-
-    # print(len(podzialy_walidacyjne))                                                   # 25
-    # print(np.array_equal(podzialy_walidacyjne[(ZIARNA[0], 0)]["test"], dane[f"z{ZIARNA[0]}_f0_test"]))   # True
 
 else:
     podzialy = {}  # (ziarno, nr faldy)
@@ -71,17 +61,10 @@ else:
             "test": p["test"],
         }
 
-    # print([len(p["walidacja"]) for p in podzialy_walidacyjne.values()])
-    # print(np.mean([len(p["trening"]) for p in podzialy_walidacyjne.values()]),
-    #       np.mean([len(p["walidacja"]) for p in podzialy_walidacyjne.values()]),
-    #       np.mean([len(p["test"]) for p in podzialy_walidacyjne.values()]))
-
     do_zapisu = {}
     for (ziarno, numer), p in podzialy_walidacyjne.items():
         for czesc in ["trening", "walidacja", "test"]:
             do_zapisu[f"z{ziarno}_f{numer}_{czesc}"] = p[czesc]
-
-    # print(len(do_zapisu))
 
     np.savez_compressed(PLIK, ziarna=np.array(ZIARNA), **do_zapisu)
 
@@ -93,11 +76,6 @@ def zaslon_pary(krawedzie, przykladowy_podzial):  # tego bedziemy uzywac do stat
     maska = krawedzie["grupa"].isin(zasloniete)
 
     return krawedzie[~maska]
-
-# przykladowy_podzial = podzialy_walidacyjne[(ZIARNA[0], 0)]
-# widoczne = zaslon_pary(krawedzie, przykladowy_podzial)
-
-# print(len(krawedzie), len(widoczne), len(krawedzie) - len(widoczne))   # różnica ok. 490
 
 def zasloniecie_do_epoki(p, krawedzie, widoczne, rng, procent = 0.7):
     grupy_trening = np.array(sorted(set(krawedzie.loc[p["trening"], "grupa"]))) # bez duplikatow, posortowan rosnaco
@@ -113,3 +91,14 @@ def zasloniecie_do_epoki(p, krawedzie, widoczne, rng, procent = 0.7):
     grafowa_tabela = widoczne[~widoczne["grupa"].isin(grupy_strat)]
 
     return grafowa_tabela, do_nauki, grupy_strat
+
+
+if __name__ == "__main__":
+    print("liczba podziałów (25):", len(podzialy_walidacyjne))
+    for ziarno in ZIARNA:
+        testy = np.concatenate([podzialy_walidacyjne[(ziarno, nr)]["test"] for nr in range(5)])
+        print(f"ziarno {ziarno}: pary w testach (1536) i unikalne (1536):", len(testy), len(set(testy)))
+    for c in ["trening", "walidacja", "test"]:
+        print(f"średni rozmiar {c} (ok. 1107 / 122 / 307):", np.mean([len(p[c]) for p in podzialy_walidacyjne.values()]).round(1))
+    zaslonieto = [len(krawedzie) - len(zaslon_pary(krawedzie, p)) for p in podzialy_walidacyjne.values()]
+    print("wiersze zasłaniane z tabeli w fałdzie (ok. 490):", np.mean(zaslonieto).round(1))

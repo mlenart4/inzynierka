@@ -41,6 +41,7 @@ def build_graph(krawedzie, X):
 # testowe budowanie grafu
 if __name__ == "__main__":
     graph = build_graph(krawedzie, X_pelne)
-    for et in graph.edge_types:
-        print(et, graph[et].edge_index.shape[1])
-    print(graph["posel"].x.shape)
+    for edgetype in graph.edge_types:
+        print(edgetype, graph[edgetype].edge_index.shape[1])
+    print("liczba typów krawędzi (6):", len(graph.edge_types))
+    print("kształt cech węzłów (498, 3708):", tuple(graph["posel"].x.shape))
