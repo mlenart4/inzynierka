@@ -4,7 +4,6 @@ from pipeline import X_pelne
 import numpy as np
 
 def czy_wycieka (graf, krawedzie, p):
-    g = graf["posel"].x.shape[0]
 
     # widoczne = zaslon_pary(krawedzie, p) # to jednak chyba bez sensu bo sprawdzamy funkcje nią samą xd
     # zasloniete = krawedzie[~krawedzie.index.isin(widoczne.index)]
@@ -21,7 +20,7 @@ def czy_wycieka (graf, krawedzie, p):
         czy_wspolne = zasloniete_pary & w_grafie
 
         assert not czy_wspolne
-    print("nie wycieka")
+    
 
 
 if __name__ == "__main__":
@@ -29,3 +28,12 @@ if __name__ == "__main__":
         widoczne = zaslon_pary(krawedzie, p)
         graf = build_graph(widoczne, X_pelne)
         czy_wycieka(graf, krawedzie, p)
+
+    print("nie wycieka")
+
+
+    # a tu powinien powiedziec ze przecieka
+
+    p_test = podzialy_walidacyjne[(67, 0)]
+    pelny_graf = build_graph(krawedzie,X_pelne)
+    czy_wycieka(pelny_graf, krawedzie, p_test)

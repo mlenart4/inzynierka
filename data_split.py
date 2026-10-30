@@ -85,7 +85,7 @@ else:
 
     np.savez_compressed(PLIK, ziarna=np.array(ZIARNA), **do_zapisu)
 
-def zaslon_pary(krawedzie, przykladowy_podzial):
+def zaslon_pary(krawedzie, przykladowy_podzial):  # tego bedziemy uzywac do statystyk sieciowych
     grupy_walidacji = set( krawedzie.loc[przykladowy_podzial["walidacja"], "grupa"])
     grupy_testu = set(krawedzie.loc[przykladowy_podzial["test"], "grupa"])
     zasloniete = grupy_walidacji | grupy_testu
