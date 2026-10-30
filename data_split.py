@@ -94,8 +94,22 @@ def zaslon_pary(krawedzie, przykladowy_podzial):  # tego bedziemy uzywac do stat
 
     return krawedzie[~maska]
 
-przykladowy_podzial = podzialy_walidacyjne[(ZIARNA[0], 0)]
-widoczne = zaslon_pary(krawedzie, przykladowy_podzial)
+# przykladowy_podzial = podzialy_walidacyjne[(ZIARNA[0], 0)]
+# widoczne = zaslon_pary(krawedzie, przykladowy_podzial)
 
 # print(len(krawedzie), len(widoczne), len(krawedzie) - len(widoczne))   # różnica ok. 490
 
+def zasloniecie_do_epoki(p, krawedzie, widoczne, rng, procent = 0.7):
+    grupy_trening = np.array(sorted(set(krawedzie.loc[p["trening"], "grupa"]))) # bez duplikatow, posortowan rosnaco
+
+    losowo = rng.permutation(grupy_trening)
+    ile = int(procent * len(losowo))
+
+    grupy_graf = losowo[:ile] # te 70%
+    grupy_strat = losowo[ile:] # 30%
+
+    do_nauki = krawedzie.loc[p["trening"]]
+    do_nauki = do_nauki[do_nauki["grupa"].isin(grupy_strat)]
+    grafowa_tabela = widoczne[~widoczne["grupa"].isin(grupy_strat)]
+
+    return grafowa_tabela, do_nauki, grupy_strat
