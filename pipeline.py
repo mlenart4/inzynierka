@@ -124,10 +124,10 @@ krawedzie["strona_adresata"] = krawedzie["odbiorca"].map(strona_wg_idx)
 wewnatrzklubowa = (krawedzie["klub_nadawcy"] == krawedzie["klub_adresata"]) & (krawedzie["klub_nadawcy"] != "niez.")
 koalicyjna = (krawedzie["strona_nadawcy"] == krawedzie["strona_adresata"]) & (krawedzie["strona_nadawcy"] == "koalicja")
 opozycyjna = (krawedzie["strona_nadawcy"] == krawedzie["strona_adresata"]) & (krawedzie["strona_nadawcy"] == "opozycja")
-rząd_opozycja = (krawedzie["strona_nadawcy"] != krawedzie["strona_adresata"])
+rzad_opozycja = (krawedzie["strona_nadawcy"] != krawedzie["strona_adresata"])
 
-typ_pary = [wewnatrzklubowa, koalicyjna, opozycyjna, rząd_opozycja]
-typ_pary_wartosc = ["wewnatrzklubowa", "koalicyjna", "opozycja_opozycja", "rząd_opozycja"]
+typ_pary = [wewnatrzklubowa, koalicyjna, opozycyjna, rzad_opozycja]
+typ_pary_wartosc = ["wewnatrzklubowa", "koalicyjna", "opozycja_opozycja", "rzad_opozycja"]
 
 krawedzie["typ_pary"] = np.select(typ_pary, typ_pary_wartosc, default="BRAK")
 # print(krawedzie["typ_pary"].head())
