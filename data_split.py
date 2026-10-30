@@ -26,7 +26,7 @@ podzialy = {}  # (ziarno, nr faldy)
 
 for ziarno in ziarna:
     
-    podzial = StratifiedGroupKFold(n_splits = 5, shuffle= True, random_state=42)
+    podzial = StratifiedGroupKFold(n_splits = 5, shuffle= True, random_state=ziarno)
 
     # faldy = []
     for numer, (trening, test) in enumerate(podzial.split(z_etykieta, y, grupy)):
@@ -46,3 +46,5 @@ print(len(podzialy))    # 25
 for ziarno in ziarna:
     testy = np.concatenate([podzialy[(ziarno, nr)]["test"] for nr in range(5)])
     print(ziarno, len(testy), len(set(testy)))    # 1536 1536
+
+print(set(podzialy[(21, 0)]["test"]) == set(podzialy[(37, 0)]["test"]))   # ma być False
