@@ -118,7 +118,7 @@ nazwy = preproces.get_feature_names_out()
 bez_klubu_maska = ~np.char.startswith(nazwy.astype(str), "klub__")
 X_bez_klubu = X_pelne[:, bez_klubu_maska]
 
-bez_klubu_i_funkcji_maska = bez_klubu_maska  # bedzie zmiana po dostarczeniu danych o funkcjach w nowym zestawie danych
+bez_klubu_i_funkcji_maska = bez_klubu_maska  # bedzie zmiana po dostarczeniu danych o funkcjach, w nowym zestawie danych
 X_bez_klubu_funkcji = X_pelne[:, bez_klubu_i_funkcji_maska]
 
 ###### sprawdzamy :)))))
