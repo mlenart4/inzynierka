@@ -58,7 +58,6 @@ krawedzie["etykieta_min3"] = krawedzie["znak_wiekszosci"].where(warunek_v2)
 table["klub"] = table["club"].replace({"Polska2050-TD": "Polska2050"})
 
 koalicja = {"KO", "PSL-TD", "Polska2050", "Lewica"}
-opozycja = {"PiS", "Konfederacja", "Razem", "Republikanie", "niez.", "Konfederacja_KP"}
 
 czy_koalicja = table["klub"].isin(koalicja)
 
@@ -97,17 +96,17 @@ table[kolumny_tekst] = table[kolumny_tekst].fillna("brak")
 
 
 kolumny_klub = [ "klub", "strona"] # bez club bo to przed scaleniem
-kolumny_kategorie = ["voivodeship", "districtName", "educationLevel"]
+kolumny_kategorie = ["voivodeship", "districtName", "educationLevel", "profession"]
 kolumny_tozsamosc = ["firstName", "secondName", "lastName", "firstLastName", "lastFirstName", "accusativeName", "genitiveName", "email", "birthLocation"]   # bez name bo to kopia firstLastName
-kolumny_liczbowe = ["wiek", "numberOfVotes", "districtNum"]
-kolumny_rola = ["waiverDesc", "profession", "inactiveCause" ]
+kolumny_liczbowe = ["wiek", "numberOfVotes"]
+kolumny_mandat = ["waiverDesc", "inactiveCause" ]
 
 
 preproces = ColumnTransformer([
     ("klub", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_klub),
     ("kategorie", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_kategorie),
-    ("tozsamosc", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_tozsamosc),
-    ("rola", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_rola),
+    # ("tozsamosc", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_tozsamosc),
+    ("mandat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_mandat),
     ("liczbowe",  StandardScaler(), kolumny_liczbowe),
     ("active",    "passthrough", ["active_num"])
 ])
@@ -119,41 +118,45 @@ nazwy = preproces.get_feature_names_out()
 bez_klubu_maska = ~np.char.startswith(nazwy.astype(str), "klub__")
 X_bez_klubu = X_pelne[:, bez_klubu_maska]
 
-bez_klubu_i_funkcji_maska = bez_klubu_maska & (~np.char.startswith(nazwy.astype(str), "rola__"))
+bez_klubu_i_funkcji_maska = bez_klubu_maska  # bedzie zmiana po dostarczeniu danych o funkcjach w nowym zestawie danych
 X_bez_klubu_funkcji = X_pelne[:, bez_klubu_i_funkcji_maska]
 
 ###### sprawdzamy :)))))
 if __name__ == "__main__":
     print("=== 2.1 Etykieta ===")
-    print("liczba posłów (498):", len(table))
-    print("wiersze tabeli par (10373):", len(krawedzie))
-    print("same neutralne p=n=0 (3993):", liczba_neutralnych)
-    print("remisy p=n>0 (105):", liczba_remisow)
-    print("pary ze znakiem większości (6275):", (krawedzie["znak"] != 0).sum())
+    print("liczba posłów: ", len(table))
+    print("wiersze tabeli par: ", len(krawedzie))
+    print("same neutralne p=n=0: ", liczba_neutralnych)
+    print("remisy p=n>0: ", liczba_remisow)
+    print("pary ze znakiem większości: ", (krawedzie["znak"] != 0).sum())
 
     print("\n=== 2.2 Próg pewności 0,8 ===")
-    print("pary z etykietą (1536):", krawedzie["etykieta"].notna().sum())
-    print("etykiety + (451):", (krawedzie["etykieta"] == "+").sum())
-    print("etykiety - (1085):", (krawedzie["etykieta"] == "-").sum())
-    print("wariant p+n>=3 (783):", krawedzie["etykieta_min3"].notna().sum())
+    print("pary z etykietą:", krawedzie["etykieta"].notna().sum())
+    print("etykiety + :", (krawedzie["etykieta"] == "+").sum())
+    print("etykiety - :", (krawedzie["etykieta"] == "-").sum())
+    print("wariant p+n>=3 :", krawedzie["etykieta_min3"].notna().sum())
 
     print("\n=== 2.3 Kluby, strony, typy par ===")
-    print("liczba klubów po scaleniu (10):", table["klub"].nunique())
-    print("posłowie koalicji (263):", (table["strona"] == "koalicja").sum())
-    print("posłowie opozycji (235):", (table["strona"] == "opozycja").sum())
-    print("typy par (suma 10373, bez BRAK):")
+    print("liczba klubów po scaleniu :", table["klub"].nunique())
+    print("posłowie koalicji :", (table["strona"] == "koalicja").sum())
+    print("posłowie opozycji :", (table["strona"] == "opozycja").sum())
+    print("typy par :")
     print(krawedzie["typ_pary"].value_counts())
     print("typ pary x etykieta (wewnątrzklubowych ujemnych ma być 2):")
     print(krawedzie.groupby(["typ_pary", "etykieta"]).size())
+
+    ile_klub = sum(table[k].nunique() for k in kolumny_klub)
+    ile_kategorie = sum(table[k].nunique() for k in kolumny_kategorie)
+    ile_mandat = sum(table[k].nunique() for k in kolumny_mandat)
+    ile_razem = ile_klub + ile_kategorie + ile_mandat + len(kolumny_liczbowe) + 1   # active
+
 
     print("\n=== 2.3 Macierze cech (wiersze 498) ===")
     print("pełne:", X_pelne.shape)
     print("bez klubu:", X_bez_klubu.shape)
     print("bez klubu i roli:", X_bez_klubu_funkcji.shape)
-    print("kolumn klubu (pełne - bez klubu, 12):", X_pelne.shape[1] - X_bez_klubu.shape[1])
-    print("kolumn roli (bez klubu - bez klubu i roli, 186):", X_bez_klubu.shape[1] - X_bez_klubu_funkcji.shape[1])
-    print("są NaN w macierzy pełnej (False):", np.isnan(X_pelne).any())
+    print("pełne kolumny: ", X_pelne.shape[1], " a oczekiwane: ", ile_razem)
+    print("kolumny klubu: ", X_pelne.shape[1]- X_bez_klubu.shape[1], " a oczekiwane: ", ile_klub)
+    print("komulny funkcji: ", "na razie nie istnieją xd")    
 
-    idx_num = [i for i, n in enumerate(nazwy.astype(str)) if n.startswith("liczbowe__")]
-    print("średnie cech liczbowych (około 0):", X_pelne[:, idx_num].mean(axis=0).round(3))
-    print("odchylenia cech liczbowych (około 1):", X_pelne[:, idx_num].std(axis=0).round(3))
+
