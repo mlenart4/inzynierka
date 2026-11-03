@@ -57,7 +57,7 @@ krawedzie["etykieta_min3"] = krawedzie["znak_wiekszosci"].where(warunek_v2)
 
 table["klub"] = table["club"].replace({"Polska2050-TD": "Polska2050"})
 
-koalicja = {"KO", "PSL-TD", "Polska2050", "Lewica"}
+koalicja = {"KO", "PSL-TD", "Polska2050", "Lewica", "Centrum"}
 
 czy_koalicja = table["klub"].isin(koalicja)
 
@@ -83,30 +83,22 @@ krawedzie["typ_pary"] = np.select(typ_pary, typ_pary_wartosc, default="BRAK")
 
 table["birthDate"] = pd.to_datetime(table["birthDate"])
 table["wiek"] = (DATA_ODNIESIENIA - table["birthDate"]).dt.days / 365.25
-
+table["staz"] = table["seniority"].str.split(",").str.len()   # "8, 9, 10" -> 3
  
 table["active_num"] = table["active"].astype(float)   # true false na 1 0 
 
-kolumny_tekst = ["club", "klub", "strona",
-                 "voivodeship", "profession", "educationLevel", "districtName",
-                 "birthLocation", "secondName", "inactiveCause", "waiverDesc",
-                 "firstName", "lastName", "firstLastName", "lastFirstName",
-                 "accusativeName", "genitiveName", "email"]
+kolumny_tekst = ["club", "klub", "strona", "voivodeship", "districtName",
+                 "educationLevel", "profession", "firstLastName"]
 table[kolumny_tekst] = table[kolumny_tekst].fillna("brak")
 
-
-kolumny_klub = [ "klub", "strona"] # bez club bo to przed scaleniem
-kolumny_kategorie = ["voivodeship", "districtName", "educationLevel", "profession"]
-kolumny_tozsamosc = ["firstName", "secondName", "lastName", "firstLastName", "lastFirstName", "accusativeName", "genitiveName", "email", "birthLocation"]   # bez name bo to kopia firstLastName
-kolumny_liczbowe = ["wiek", "numberOfVotes"]
-kolumny_mandat = ["waiverDesc", "inactiveCause" ]
-
+kolumny_klub = ["klub", "strona"]  # bez club bo to przed scaleniem
+kolumny_kategorie = ["voivodeship", "districtName", "educationLevel"]   # profession ma osobną grupę
+kolumny_liczbowe = ["wiek", "numberOfVotes", "staz"]
 
 preproces = ColumnTransformer([
     ("klub", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_klub),
     ("kategorie", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_kategorie),
-    # ("tozsamosc", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_tozsamosc),
-    ("mandat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), kolumny_mandat),
+    ("zawod", OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=5, sparse_output=False), ["profession"]),
     ("liczbowe",  StandardScaler(), kolumny_liczbowe),
     ("active",    "passthrough", ["active_num"])
 ])
@@ -142,21 +134,21 @@ if __name__ == "__main__":
     print("posłowie opozycji :", (table["strona"] == "opozycja").sum())
     print("typy par :")
     print(krawedzie["typ_pary"].value_counts())
-    print("typ pary x etykieta (wewnątrzklubowych ujemnych ma być 2):")
+    print("typ pary x etykieta:")
     print(krawedzie.groupby(["typ_pary", "etykieta"]).size())
 
+    z = table["profession"].value_counts()
     ile_klub = sum(table[k].nunique() for k in kolumny_klub)
     ile_kategorie = sum(table[k].nunique() for k in kolumny_kategorie)
-    ile_mandat = sum(table[k].nunique() for k in kolumny_mandat)
-    ile_razem = ile_klub + ile_kategorie + ile_mandat + len(kolumny_liczbowe) + 1   # active
+    ile_zawod = (z >= 5).sum() + (z < 5).any()   # zawody min. 5 razy + jedna kolumna na rzadkie
+    ile_razem = ile_klub + ile_kategorie + ile_zawod + len(kolumny_liczbowe) + 1   # active
 
-
-    print("\n=== 2.3 Macierze cech (wiersze 498) ===")
+    print("\n=== 2.3 Macierze cech (wiersze", len(table), ") ===")
     print("pełne:", X_pelne.shape)
     print("bez klubu:", X_bez_klubu.shape)
     print("bez klubu i roli:", X_bez_klubu_funkcji.shape)
     print("pełne kolumny: ", X_pelne.shape[1], " a oczekiwane: ", ile_razem)
-    print("kolumny klubu: ", X_pelne.shape[1]- X_bez_klubu.shape[1], " a oczekiwane: ", ile_klub)
-    print("komulny funkcji: ", "na razie nie istnieją xd")    
-
+    print("kolumny klubu: ", X_pelne.shape[1] - X_bez_klubu.shape[1], " a oczekiwane: ", ile_klub)
+    print("kolumny zawodu: ", sum(n.startswith("zawod__") for n in nazwy), " a oczekiwane: ", ile_zawod)
+    print("kolumny funkcji: ", "na razie nie istnieją xd")
 

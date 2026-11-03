@@ -29,11 +29,15 @@ if __name__ == "__main__":
         graf = build_graph(widoczne, X_pelne)
         czy_wycieka(graf, krawedzie, p)
 
-    print("{len(podzialy_walidacyjne)} podziałów bez wycieku")
+    print(f"{len(podzialy_walidacyjne)} podziałów bez wycieku")
 
 
     # a tu powinien powiedziec ze przecieka
 
     p_test = podzialy_walidacyjne[(67, 0)]
     pelny_graf = build_graph(krawedzie,X_pelne)
-    czy_wycieka(pelny_graf, krawedzie, p_test)
+    try:
+        czy_wycieka(pelny_graf, krawedzie, p_test)
+        print("BŁĄD: pełny graf nie wykazał wycieku")
+    except AssertionError:
+        print("pełny graf wycieka (zgodnie z oczekiwaniem)")

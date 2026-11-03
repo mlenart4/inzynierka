@@ -32,6 +32,9 @@ if PLIK.exists():
                 czesc: dane[f"z{ziarno}_f{nr}_{czesc}"]
                 for czesc in ["trening", "walidacja", "test"]
             }
+    for ziarno in ZIARNA:
+        testy = np.concatenate([podzialy_walidacyjne[(ziarno, nr)]["test"] for nr in range(5)])
+        assert np.array_equal(np.sort(testy), z_etykieta.index.to_numpy()), "podzialy.npz nie pasuje do danych, usuń plik"    
 
 else:
     podzialy = {}  # (ziarno, nr faldy)
@@ -44,7 +47,7 @@ else:
             podzialy[(ziarno, numer)] = {
                 "trening": z_etykieta.index[trening].to_numpy(),
                 "test": z_etykieta.index[test].to_numpy(),}
-         
+             
 
     podzialy_walidacyjne = {}
 
@@ -94,11 +97,11 @@ def zasloniecie_do_epoki(p, krawedzie, widoczne, rng, procent = 0.7):
 
 
 if __name__ == "__main__":
-    print("liczba podziałów (25):", len(podzialy_walidacyjne))
+    print(f"liczba podziałów (25): {len(podzialy_walidacyjne)}")
     for ziarno in ZIARNA:
         testy = np.concatenate([podzialy_walidacyjne[(ziarno, nr)]["test"] for nr in range(5)])
-        print(f"ziarno {ziarno}: pary w testach (1536) i unikalne (1536):", len(testy), len(set(testy)))
+        print(f"ziarno {ziarno}: pary w testach ({len(z_etykieta)}) i unikalne ({len(z_etykieta)}):", len(testy), len(set(testy)))
     for c in ["trening", "walidacja", "test"]:
-        print(f"średni rozmiar {c} (ok. 1107 / 122 / 307):", np.mean([len(p[c]) for p in podzialy_walidacyjne.values()]).round(1))
+        print(f"średni rozmiar {c}:", np.mean([len(p[c]) for p in podzialy_walidacyjne.values()]).round(1))
     zaslonieto = [len(krawedzie) - len(zaslon_pary(krawedzie, p)) for p in podzialy_walidacyjne.values()]
-    print("wiersze zasłaniane z tabeli w fałdzie (ok. 490):", np.mean(zaslonieto).round(1))
+    print("średnio zasłaniane wiersze tabeli par w fałdzie:", np.mean(zaslonieto).round(1))
