@@ -113,13 +113,36 @@ def ocena(y, oceny, opis, prog):
         waga = l_plus * l_minus
         wagi.append(waga)
     wynik = sum(a * w for a, w in zip(rocauc_pr_klub, wagi)) / sum(wagi)
-    wyniki .append({"podgrupa": "kluby", "miara": "roc_auc_wazone", "wartosc": wynik})
+    wyniki.append({"podgrupa": "caly_test","miara": "auc_w_parach_klubow","wartosc": wynik})
 
         
 
     return pd.DataFrame(wyniki)
 
-# testujemy funkcje ocena
-opis_t, y_t, idx = f_opis_i_y(21, 0)
-wynik = ocena(y_t, np.full(len(y_t), 0.5), opis_t, 0.5) # stala ocena 0.5 dla wszystkich
-print(wynik) # spodziewamy sie roc-auc 05 i auc-pr dla calosci ok 0,26 (odesetek dodatnich)
+# # testujemy funkcje ocena
+# opis_t, y_t, idx = f_opis_i_y(21, 0)
+# wynik = ocena(y_t, np.full(len(y_t), 0.5), opis_t, 0.5) # stala ocena 0.5 dla wszystkich
+# print(wynik) # spodziewamy sie roc-auc 05 i auc-pr dla calosci ok 0,26 (odesetek dodatnich)
+
+def prog_decyzyjny(y_walidacja, oceny_walidacyjne):
+    # y_walidacja - tablica prawdziwych znakow 0 1 etykiet ze zbiory walidacyjnego
+    # oceny_walidacyjne - tablica ocen modelu (np. prawdopodobienstw) dla zbioru walidacyjnego
+    # zwraca prog decyzyjny
+    o = np.unique(oceny_walidacyjne)
+    if len(o) < 2:
+        return 0.5  # jak wszystkie maja ta sama ocene to prog 0.5
+    potencjalne_progi = (o[:-1] + o[1:]) / 2 # srodki miedzy wartosciami (nie powtorza sie bo unique je posortowalo i usunelo powtorki)
+    f1 = []
+    for prog in potencjalne_progi:
+        f1.append(f1_score(y_walidacja, f_decyzje(oceny_walidacyjne, prog), average="macro"))
+
+    return potencjalne_progi[np.argmax(f1)] # z najwiekszym f1-makro
+
+# test progu
+# y_test = np.array([0, 0, 0, 1, 1])
+# print(prog_decyzyjny(y_test, y_test.astype(float)))   # oczekuję 0.5
+
+# y_testuje = etykieta_liczbowa(podzialy_walidacyjne[(21, 0)]["walidacja"])
+# ocena_tesuje = np.random.default_rng(0).random(len(y_testuje))  # losowe oceny w [0,1]
+# prog_testuje = prog_decyzyjny(y_testuje, ocena_tesuje)
+# print("prog decyzyjny dla losowych ocen: ", prog_testuje)  # powinno byc 0,5 minimum
