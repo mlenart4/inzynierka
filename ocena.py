@@ -31,6 +31,9 @@ top25_zsuma = suma.nlargest(25)
 top25 = suma.nlargest(25).index
 krawedzie["adresat_top25"] = krawedzie["odbiorca"].isin(top25)
 
+#robienie komorek potrzebnych w modelu B
+krawedzie["komorka"] = np.where(krawedzie["typ_pary"] == "wewnatrzklubowa", "ten_sam_klub", krawedzie["strona_nadawcy"] + " -> " + krawedzie["strona_adresata"])
+
 def f_opis_i_y(ziarno, numer):
     p = podzialy_walidacyjne[(ziarno, numer)]
     idx = p["test"]
@@ -146,3 +149,4 @@ def prog_decyzyjny(y_walidacja, oceny_walidacyjne):
 # ocena_tesuje = np.random.default_rng(0).random(len(y_testuje))  # losowe oceny w [0,1]
 # prog_testuje = prog_decyzyjny(y_testuje, ocena_tesuje)
 # print("prog decyzyjny dla losowych ocen: ", prog_testuje)  # powinno byc 0,5 minimum
+
