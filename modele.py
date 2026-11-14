@@ -1,5 +1,9 @@
 import numpy as np
 from data_split import krawedzie 
+import torch
+import torch.nn as nn
+from copy import deepcopy
+from pipeline import X_pelne
 
 def model_A(p, y_trening, ziarno):      # najczestsza klasa w zbiorze treningowym
     odsetek_dodatnich = y_trening.mean()
@@ -33,3 +37,26 @@ def model_B(p, y_trening, ziarno):      # para klubow
         wynik[podzial] = np.nan_to_num(ocena, nan=y_trening.mean())
 
     return wynik
+
+def model_C(p, y_trening, ziarno):        # MLP na cechach węzłów
+    y_walidacja = (krawedzie.loc[p["walidacja"], "etykieta"] == "+").to_numpy().astype(int)   # musimy miec do uczenia modelu
+    
+    wejscia = {}
+    for podzial in ["trening", "walidacja", "test"]:
+        nadawca = krawedzie.loc[p[podzial], "nadawca"].to_numpy()
+        adresat = krawedzie.loc[p[podzial], "odbiorca"].to_numpy()
+        wejscia[podzial] = np.hstack([X_pelne[nadawca], X_pelne[adresat]])
+
+    # print("trening", wejscia["trening"].shape)
+    # print("walidacja", wejscia["walidacja"].shape)
+    # print("test", wejscia["test"].shape)
+
+    wejscia["trening"] = torch.as_tensor(wejscia["trening"], dtype=torch.float32)
+    wejscia["walidacja"] = torch.as_tensor(wejscia["walidacja"], dtype=torch.float32)
+    wejscia["test"] = torch.as_tensor(wejscia["test"], dtype=torch.float32)
+    y_trening = torch.as_tensor(y_trening, dtype=torch.float32)
+    y_walidacja = torch.as_tensor(y_walidacja, dtype=torch.float32)
+
+    
+
+    return wejscia
