@@ -38,7 +38,7 @@ def model_B(p, y_trening, ziarno):      # para klubow
 
     return wynik
 
-def model_C(p, y_trening, ziarno):        # MLP na cechach węzłów
+def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach węzłów, ziarno dojdzie w etap 3 zrobimy petle in range(5) jako numer fałdy
     y_walidacja = (krawedzie.loc[p["walidacja"], "etykieta"] == "+").to_numpy().astype(int)   # musimy miec do uczenia modelu
     
     wejscia = {}
@@ -57,6 +57,55 @@ def model_C(p, y_trening, ziarno):        # MLP na cechach węzłów
     y_trening = torch.as_tensor(y_trening, dtype=torch.float32)
     y_walidacja = torch.as_tensor(y_walidacja, dtype=torch.float32)
 
-    
+    torch.manual_seed(ziarno_modelu)
 
-    return wejscia
+    mlp = nn.Sequential(
+        nn.Linear(wejscia["trening"].shape[1], 64),
+        nn.ReLU(),
+        nn.Linear(64, 1)
+    )
+
+    # print("wielkosc sieci", mlp(wejscia["trening"]).shape)
+
+    waga = (len(y_trening) - y_trening.sum()) / y_trening.sum()
+    funkcja_straty = nn.BCEWithLogitsLoss(pos_weight=waga)
+    optymalizator = torch.optim.Adam(mlp.parameters(), lr=0.01, weight_decay=0.001)
+
+    najlepsza_strata, najlepsze_wagi, bez_poprawy = np.inf, None, 0
+
+    for epoch in range(300):
+        mlp.train()
+        optymalizator.zero_grad()
+        logity = mlp(wejscia["trening"]).squeeze(1)  #trzeba splaszczyc zeby byly w tym samym rozmiarze co y_trening z (1335, 1) na (1335,)
+        strata = funkcja_straty(logity, y_trening)
+        strata.backward()
+        optymalizator.step()
+
+        mlp.eval()
+        with torch.no_grad():
+            logity_walidacja = mlp(wejscia["walidacja"]).squeeze(1)
+            strata_walidacja = funkcja_straty(logity_walidacja, y_walidacja).item()
+
+        if strata_walidacja < najlepsza_strata:
+            najlepsza_strata = strata_walidacja
+            najlepsze_wagi = deepcopy(mlp.state_dict())
+            bez_poprawy = 0
+        else:
+            bez_poprawy += 1
+            if bez_poprawy >= 30:
+                break
+
+        
+    print("pętla zatrzymała się na epoce:", epoch, ", najlepsza strata walidacyjna:", najlepsza_strata)
+    mlp.load_state_dict(najlepsze_wagi)
+
+    mlp.eval()
+    with torch.no_grad():
+        logity_walidacja = mlp(wejscia["walidacja"]).squeeze(1)
+        logity_test = mlp(wejscia["test"]).squeeze(1)
+        oceny_walidacja = torch.sigmoid(logity_walidacja)
+        oceny_test = torch.sigmoid(logity_test)
+        walidacja = oceny_walidacja.numpy()
+        test = oceny_test.numpy()
+
+    return {"walidacja": walidacja, "test": test}
