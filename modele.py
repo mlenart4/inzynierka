@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 from pipeline import X_pelne
+from data_split import zaslon_pary
 
 def model_A(p, y_trening, ziarno):      # najczestsza klasa w zbiorze treningowym
     odsetek_dodatnich = y_trening.mean()
@@ -107,5 +108,30 @@ def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach węzłów, zia
         oceny_test = torch.sigmoid(logity_test)
         walidacja = oceny_walidacja.numpy()
         test = oceny_test.numpy()
+
+    return {"walidacja": walidacja, "test": test}
+
+
+def model_D(p, y_trening, ziarno):
+    widoczne = zaslon_pary(krawedzie, p)
+    nadawca = widoczne["nadawca"].to_numpy()
+    odbiorca = widoczne["odbiorca"].to_numpy()
+    poz = widoczne["p"].to_numpy()
+    neg = widoczne["n"].to_numpy()
+
+    liczba_poslow = len(X_pelne)
+    P = np.zeros((liczba_poslow, liczba_poslow))
+    N = np.zeros((liczba_poslow, liczba_poslow))
+    A = np.zeros((liczba_poslow, liczba_poslow))
+
+    maska_poz = poz > neg
+    maska_neg = poz < neg
+
+    P[nadawca[maska_poz], odbiorca[maska_poz]] = 1
+    N[nadawca[maska_neg], odbiorca[maska_neg]] = 1
+    A[nadawca, odbiorca] = 1
+
+    # print("widoczne: ", len(widoczne), "suma A", A.sum())
+       
 
     return {"walidacja": walidacja, "test": test}
