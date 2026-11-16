@@ -5,6 +5,7 @@ import torch.nn as nn
 from copy import deepcopy
 from pipeline import X_pelne
 from data_split import zaslon_pary
+from sklearn.ensemble import HistGradientBoostingClassifier
 
 def model_A(p, y_trening, ziarno):      # najczestsza klasa w zbiorze treningowym
     odsetek_dodatnich = y_trening.mean()
@@ -132,6 +133,72 @@ def model_D(p, y_trening, ziarno):
     A[nadawca, odbiorca] = 1
 
     # print("widoczne: ", len(widoczne), "suma A", A.sum())
-       
+    
+    P_wchodzace = P.sum(axis=0)
+    P_wychodzace = P.sum(axis=1)
+    N_wchodzace = N.sum(axis=0)
+    N_wychodzace = N.sum(axis=1)
+    A_wchodzace = A.sum(axis=0)
+    A_wychodzace = A.sum(axis=1)
+    U = ((A+A.T)>0).astype(float)
+    wspolni_sasiedzi = U @ U
 
+    # print(len(P_wchodzace))
+    # print(wspolni_sasiedzi.shape)
+
+    ## triady
+    lista = [P, P.T, N, N.T]  # u->w dodatnia , w->u dodatnia, u->w ujemna, w->u ujemna 
+    triady = []
+    for M1 in lista:
+        for M2 in lista:
+            triady.append(M1 @ M2)
+
+    def cechy_triadowe(nadawca, odbiorca):
+        return np.column_stack([M[nadawca, odbiorca] for M in triady])
+
+    def cechy_stopniowe(nadawca, odbiorca):
+        return np.column_stack([
+            P_wchodzace[odbiorca],
+            P_wychodzace[nadawca],
+            N_wchodzace[odbiorca],
+            N_wychodzace[nadawca],
+            A_wchodzace[odbiorca],
+            A_wychodzace[nadawca],
+            wspolni_sasiedzi[nadawca, odbiorca],
+        ])
+
+    nadawcy_trening = krawedzie.loc[p["trening"], "nadawca"].to_numpy()
+    adresaci_trening = krawedzie.loc[p["trening"], "odbiorca"].to_numpy()
+    cechy_trening = cechy_stopniowe(nadawcy_trening, adresaci_trening)
+
+    # print("przed", cechy_trening.sum(axis=0))
+    ### zeby wycieku w treningu nie bylo 
+
+    cechy_trening[:, 0] -= P[nadawcy_trening, adresaci_trening]
+    cechy_trening[:, 1] -= P[nadawcy_trening, adresaci_trening]
+    cechy_trening[:, 2] -= N[nadawcy_trening, adresaci_trening]
+    cechy_trening[:, 3] -= N[nadawcy_trening, adresaci_trening]
+    cechy_trening[:, 4] -= A[nadawcy_trening, adresaci_trening]
+    cechy_trening[:, 5] -= A[nadawcy_trening, adresaci_trening]
+
+    # print("czy checy nie ujemne", cechy_trening.min(),)
+    # print("po", cechy_trening.sum(axis=0))   
+
+    cechy_trening = np.hstack([cechy_trening, cechy_triadowe(nadawcy_trening, adresaci_trening)]) # sklejamy stopniowe i triadowe
+     
+    nadawcy_walidacja = krawedzie.loc[p["walidacja"], "nadawca"].to_numpy()
+    adresaci_walidacja = krawedzie.loc[p["walidacja"], "odbiorca"].to_numpy()
+    cechy_walidacja = cechy_stopniowe(nadawcy_walidacja, adresaci_walidacja)
+    cechy_walidacja = np.hstack([cechy_walidacja, cechy_triadowe(nadawcy_walidacja, adresaci_walidacja)])
+
+    nadawcy_test = krawedzie.loc[p["test"], "nadawca"].to_numpy()
+    adresaci_test = krawedzie.loc[p["test"], "odbiorca"].to_numpy()
+    cechy_test = cechy_stopniowe(nadawcy_test, adresaci_test)
+    cechy_test = np.hstack([cechy_test, cechy_triadowe(nadawcy_test, adresaci_test)])
+
+    model = HistGradientBoostingClassifier(class_weight="balanced", random_state=ziarno)
+    model.fit(cechy_trening, y_trening)
+    walidacja = model.predict_proba(cechy_walidacja)[:, 1]
+    test = model.predict_proba(cechy_test)[:, 1]
+    
     return {"walidacja": walidacja, "test": test}
