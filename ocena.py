@@ -130,7 +130,6 @@ def ocena(y, oceny, opis, prog):
 def prog_decyzyjny(y_walidacja, oceny_walidacyjne):
     # y_walidacja - tablica prawdziwych znakow 0 1 etykiet ze zbiory walidacyjnego
     # oceny_walidacyjne - tablica ocen modelu (np. prawdopodobienstw) dla zbioru walidacyjnego
-    # zwraca prog decyzyjny
     o = np.unique(oceny_walidacyjne)
     if len(o) < 2:
         return 0.5  # jak wszystkie maja ta sama ocene to prog 0.5

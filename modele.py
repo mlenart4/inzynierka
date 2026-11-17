@@ -19,12 +19,9 @@ def model_B(p, y_trening, ziarno):      # para klubow
     suma = tabela.groupby(["klub_nadawcy", "klub_adresata"])["y_trening"].sum()
     liczba = tabela.groupby(["klub_nadawcy", "klub_adresata"])["y_trening"].count()
     
-    # suma_komorki = tabela.groupby(["komorka"])["y_trening"].sum()
-    # liczba_komorki = tabela.groupby(["komorka"])["y_trening"].count()
-    # print(tabela["komorka"].value_counts())
     k = 5
     odestki = tabela.groupby(["komorka"])["y_trening"].mean()
-    # print(odestki)
+   
 
     slownik_suma = suma.to_dict()
     slownik_liczba = liczba.to_dict()
@@ -40,7 +37,7 @@ def model_B(p, y_trening, ziarno):      # para klubow
 
     return wynik
 
-def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach węzłów, ziarno dojdzie w etap 3 zrobimy petle in range(5) jako numer fałdy
+def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach wezlow, ziarno dojdzie w etap 3 zrobimy petle in range(5) jako numer fałdy
     y_walidacja = (krawedzie.loc[p["walidacja"], "etykieta"] == "+").to_numpy().astype(int)   # musimy miec do uczenia modelu
     
     wejscia = {}
@@ -48,10 +45,6 @@ def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach węzłów, zia
         nadawca = krawedzie.loc[p[podzial], "nadawca"].to_numpy()
         adresat = krawedzie.loc[p[podzial], "odbiorca"].to_numpy()
         wejscia[podzial] = np.hstack([X_pelne[nadawca], X_pelne[adresat]])
-
-    # print("trening", wejscia["trening"].shape)
-    # print("walidacja", wejscia["walidacja"].shape)
-    # print("test", wejscia["test"].shape)
 
     wejscia["trening"] = torch.as_tensor(wejscia["trening"], dtype=torch.float32)
     wejscia["walidacja"] = torch.as_tensor(wejscia["walidacja"], dtype=torch.float32)
@@ -132,8 +125,6 @@ def model_D(p, y_trening, ziarno):
     N[nadawca[maska_neg], odbiorca[maska_neg]] = 1
     A[nadawca, odbiorca] = 1
 
-    # print("widoczne: ", len(widoczne), "suma A", A.sum())
-    
     P_wchodzace = P.sum(axis=0)
     P_wychodzace = P.sum(axis=1)
     N_wchodzace = N.sum(axis=0)
@@ -142,9 +133,6 @@ def model_D(p, y_trening, ziarno):
     A_wychodzace = A.sum(axis=1)
     U = ((A+A.T)>0).astype(float)
     wspolni_sasiedzi = U @ U
-
-    # print(len(P_wchodzace))
-    # print(wspolni_sasiedzi.shape)
 
     ## triady
     lista = [P, P.T, N, N.T]  # u->w dodatnia , w->u dodatnia, u->w ujemna, w->u ujemna 
