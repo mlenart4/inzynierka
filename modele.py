@@ -98,7 +98,7 @@ def model_C(p, y_trening, ziarno_modelu):        # MLP na cechach węzłów, zia
                 break
 
         
-    print("pętla zatrzymała się na epoce:", epoch, ", najlepsza strata walidacyjna:", najlepsza_strata)
+    # print("pętla zatrzymała się na epoce:", epoch, ", najlepsza strata walidacyjna:", najlepsza_strata)
     mlp.load_state_dict(najlepsze_wagi)
 
     mlp.eval()
